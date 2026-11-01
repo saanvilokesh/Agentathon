@@ -1,0 +1,491 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cognitive Fingerprint</title>
+  <link rel="stylesheet" href="solution_viz.css">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #161e34;
+      --border: #34405d;
+      --accent: #ff8a3d;
+      --text: #e8ecf8;
+      --muted: #a8b3ce;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1.5 system-ui, sans-serif;
+    }
+
+    h1 { font-size: 19px; margin: 0; }
+    h2 { font-size: 15px; color: var(--accent); margin: 0 0 10px; }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px;
+      margin: 12px 0;
+    }
+
+    label {
+      display: block;
+      margin: 8px 0;
+      color: var(--muted);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 9px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: #0d1427;
+      color: white;
+    }
+
+    textarea {
+      font: 12px/1.5 Consolas, monospace;
+      resize: vertical;
+    }
+
+    .row { display: flex; gap: 8px; }
+    .row > * { flex: 1; min-width: 0; }
+
+    button {
+      padding: 10px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      color: white;
+      background: #33405d;
+    }
+
+    button.primary {
+      background: #e87524;
+      color: #111;
+      font-weight: bold;
+    }
+
+    button:disabled { opacity: 0.5; }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 11px; }
+
+    .summary {
+      padding: 12px;
+      border-radius: 9px;
+      background: #23334a;
+      font-size: 14px;
+      font-weight: 650;
+      margin: 8px 0;
+    }
+
+    .summary.ok {
+      background: #173b32;
+      color: #baf3d7;
+    }
+
+    .summary.warn {
+      background: #49351c;
+      color: #ffe0a6;
+    }
+
+    .meter {
+      height: 9px;
+      border-radius: 9px;
+      background: #36415a;
+      overflow: hidden;
+    }
+
+    .meter > div {
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .metric { margin: 10px 0; }
+
+    .metrichead {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .codepane {
+      background: #0c1427;
+      border: 1px solid var(--border);
+      padding: 8px;
+      overflow: auto;
+      max-height: 380px;
+      font: 11px/1.6 Consolas, monospace;
+      white-space: pre;
+    }
+
+    .line { display: block; white-space: pre; }
+    .line.bad { background: #693138; }
+    .line.added { background: #1c5945; }
+    .line.highlight { outline: 2px solid #ffad57; }
+    .diff-item { padding: 8px; margin: 6px 0; border-left: 3px solid #ffad57; background: #101a2e; border-radius: 5px; }
+    .diff-old { color: #ff9b9b; white-space: pre-wrap; font-family: Consolas, monospace; }
+    .diff-new { color: #9be6bd; white-space: pre-wrap; font-family: Consolas, monospace; }
+    .topic-row { padding: 9px 0; border-bottom: 1px solid var(--border); }
+    .tag { display: inline-block; padding: 2px 7px; border-radius: 10px; background: #34405d; font-size: 10px; margin-left: 5px; }
+
+
+    .dashboard-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+    .dashboard-heading h2 { margin-bottom:2px; }
+    .refresh-btn { padding:6px 9px; font-size:11px; white-space:nowrap; }
+    .stat-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:12px 0; }
+    .stat-card { background:#0e172b; border:1px solid var(--border); border-radius:9px; padding:10px; display:flex; flex-direction:column; gap:2px; }
+    .stat-value { font-size:22px; line-height:1.2; font-weight:750; color:#fff; }
+    .stat-label,.tiny { font-size:10px; color:var(--muted); }
+    .overall-progress { padding:10px; background:#0e172b; border-radius:9px; margin:10px 0 14px; }
+    .progress-heading { display:flex; justify-content:space-between; gap:8px; font-size:11px; margin-bottom:7px; }
+    .progress-track { height:8px; background:#35415b; border-radius:20px; overflow:hidden; }
+    .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,#36b88a,#9adf8d); border-radius:20px; transition:width .35s ease; }
+    .subheading { margin-top:16px !important; }
+    .topic-card { padding:10px 0; border-bottom:1px solid var(--border); }
+    .topic-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .topic-name { font-weight:650; overflow-wrap:anywhere; }
+    .topic-rate { font-size:11px; color:#cbd5ed; white-space:nowrap; }
+    .topic-track { height:6px; background:#35415b; border-radius:20px; overflow:hidden; margin:7px 0 5px; }
+    .topic-fill { height:100%; border-radius:20px; background:#54b99a; }
+    .topic-meta { color:var(--muted); font-size:10px; }
+    .topic-tag { display:inline-block; border-radius:20px; padding:2px 7px; margin-top:6px; font-size:10px; background:#35415b; }
+    .topic-tag.practice { background:#58352e; color:#ffc3a8; }
+    .topic-tag.improving { background:#254b43; color:#a8efd2; }
+    .topic-tag.ontrack { background:#29415b; color:#b9d8ff; }
+    .history-details { margin-top:14px; border-top:1px solid var(--border); padding-top:10px; }
+    .history-details summary { color:var(--accent); font-weight:650; cursor:pointer; }
+    #dashboardStatus { margin:10px 0 0; }
+    .case {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pill {
+      font-size: 10px;
+      background: #34405d;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    a { color: #ffad6e; }
+    details { margin: 8px 0; }
+
+    #status { white-space: pre-wrap; }
+
+    #traceState, #verifyOutput {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    [hidden] { display: none !important; }
+  </style>
+</head>
+
+<body>
+  <h1>🧠 Cognitive Fingerprint</h1>
+
+  <p class="muted">
+    Find the mistake. Understand the reason. Learn the fix.
+  </p>
+
+  <section class="card dashboard" id="learningDashboard">
+    <div class="dashboard-heading">
+      <div>
+        <h2>YOUR LEARNING PROGRESS</h2>
+        <p class="muted small">Live stats from your local SQLite database</p>
+      </div>
+      <button id="refreshProgressBtn" class="refresh-btn" type="button">↻ Refresh</button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><span class="stat-value" id="statAnalyses">—</span><span class="stat-label">Analyses</span></div>
+      <div class="stat-card"><span class="stat-value" id="statTopics">—</span><span class="stat-label">Topics covered</span></div>
+      <div class="stat-card"><span class="stat-value" id="statSolved">—</span><span class="stat-label">Correct analyses</span></div>
+      <div class="stat-card"><span class="stat-value" id="statErrors">—</span><span class="stat-label">Bugged attempts</span></div>
+    </div>
+
+    <div class="overall-progress">
+      <div class="progress-heading"><b>Overall correct-analysis rate</b><b id="overallRate">0%</b></div>
+      <div class="progress-track"><div id="overallFill" class="progress-fill"></div></div>
+      <p class="muted tiny" id="overallCaption">Run your first analysis to start tracking progress.</p>
+    </div>
+
+    <h2 class="subheading">TOPICS & PRACTICE PLAN</h2>
+    <div id="progressTopics">
+      <p class="muted small">Connecting to your database…</p>
+    </div>
+
+    <details class="history-details">
+      <summary>Recent error history</summary>
+      <p class="muted tiny">Saved analyses from your local SQLite database.</p>
+      <div id="history"></div>
+    </details>
+    <p id="dashboardStatus" class="muted tiny" role="status">Connecting to backend…</p>
+  </section>
+
+  <section class="card">
+    <h2>Choose your explanation level</h2>
+
+    <label>
+      How detailed should the explanation be?
+
+      <select id="learningLevel">
+        <option value="beginner">
+          🌱 Beginner: simple explanation
+        </option>
+        <option value="intermediate">
+          🧩 Intermediate: code and complexity
+        </option>
+        <option value="advanced">
+          🔬 Advanced: technical details
+        </option>
+      </select>
+    </label>
+
+    <p id="levelHelp" class="muted small">
+      Beginner mode focuses on what happened,
+      why, and what to try next.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>1. Problem</h2>
+
+    <label>
+      Title
+      <input id="title">
+    </label>
+
+    <details>
+      <summary>Show problem details</summary>
+
+      <label>
+        Problem ID
+        <input id="slug">
+      </label>
+
+      <label>
+        Statement
+        <textarea id="statement" rows="4"></textarea>
+      </label>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>2. Your code</h2>
+
+    <div class="row">
+      <label>
+        Language
+        <select id="language">
+          <option>C++</option>
+          <option>Python3</option>
+          <option>Java</option>
+          <option>JavaScript</option>
+          <option>TypeScript</option>
+          <option>C</option>
+          <option>C#</option>
+          <option>Go</option>
+          <option>Rust</option>
+        </select>
+      </label>
+
+      <label>
+        Verdict
+        <select id="verdict">
+          <option>Unknown</option>
+          <option>Wrong Answer</option>
+          <option>Accepted</option>
+          <option>Time Limit Exceeded</option>
+          <option>Runtime Error</option>
+          <option>Compilation Error</option>
+          <option>Memory Limit Exceeded</option>
+        </select>
+      </label>
+    </div>
+
+    <textarea
+      id="code"
+      rows="12"
+      spellcheck="false"
+      placeholder="Sync or paste your submitted code"
+    ></textarea>
+
+    <p id="source" class="muted small">
+      Current editor content may differ from submitted code.
+    </p>
+
+    <div class="row">
+      <button id="syncBtn">Sync LeetCode</button>
+      <button id="analyzeBtn" class="primary">
+        Analyze code
+      </button>
+    </div>
+
+    <p id="status" role="status" class="muted"></p>
+  </section>
+
+  <section class="card" id="vizSection">
+    <h2>3. See the solution</h2>
+
+    <p class="muted small">
+      Step-by-step diagrams of how the solution works on a small
+      example. Works for any problem you open, and is saved so it
+      loads instantly next time.
+    </p>
+
+    <div class="row">
+      <button id="vizBtn" class="primary" type="button">
+        Explain with diagrams
+      </button>
+      <button id="vizRegenBtn" type="button" hidden>
+        Regenerate
+      </button>
+    </div>
+
+    <p id="vizStatus" role="status" class="muted small"></p>
+    <div id="vizMount"></div>
+  </section>
+
+  <section class="card" id="results" hidden>
+    <h2>Your analysis</h2>
+
+    <div id="diagnosis"></div>
+    <div id="assurance"></div>
+
+    <details id="metricsSection">
+      <summary>
+        Code quality estimates and complexity
+      </summary>
+      <div id="metrics"></div>
+    </details>
+
+    <div id="comparisonSection" hidden>
+      <h2>Suggested fix</h2>
+
+      <p class="muted small">
+        AI-suggested changes. Test the solution
+        on LeetCode before trusting it.
+      </p>
+
+      <div class="comparison">
+        <div>
+          <b>Your code</b>
+          <div class="codepane" id="origCode"></div>
+        </div>
+
+        <div>
+          <b>Suggested code</b>
+          <div class="codepane" id="modCode"></div>
+        </div>
+      </div>
+
+      <h3>Exactly what changed?</h3>
+      <p class="muted small">Red = removed/incorrect line · Green = added/corrected line. Each change is listed with its line number.</p>
+      <div id="diffDetails"></div>
+      <div id="explanation"></div>
+    </div>
+
+    <details id="testsSection" hidden>
+      <summary>
+        Suggested test cases (not executed)
+      </summary>
+      <div id="cases"></div>
+    </details>
+
+    <div id="traceSection" hidden>
+      <h2>Verified execution trace</h2>
+      <p id="traceStatus" class="muted"></p>
+
+      <div class="row">
+        <button id="prevStep">◀ Previous</button>
+        <button id="nextStep">Next ▶</button>
+      </div>
+
+      <pre id="traceState"></pre>
+    </div>
+
+    <section class="card" id="verifySection">
+      <h2>Try a real test (Python only)</h2>
+
+      <p id="verifyLanguageHelp" class="muted small"></p>
+
+      <p class="muted small">
+        Optional. Enter a Solution method name
+        and a JSON array of arguments.
+        Execution requires an isolated Docker container.
+      </p>
+
+      <label>
+        Method name
+        <input id="verifyMethod" placeholder="twoSum">
+      </label>
+
+      <label>
+        Arguments (JSON array)
+        <textarea
+          id="verifyArgs"
+          rows="3"
+          placeholder="[[2,7,11,15],9]"
+        ></textarea>
+      </label>
+
+      <label>
+        Expected output (JSON)
+        <textarea
+          id="verifyExpected"
+          rows="2"
+          placeholder="[0,1]"
+        ></textarea>
+      </label>
+
+      <button id="verifyBtn">
+        Run isolated test
+      </button>
+
+      <p id="verifyStatus" class="muted"></p>
+      <pre id="verifyOutput"></pre>
+    </section>
+
+    <div id="practiceSection" hidden>
+      <h2>Practice next</h2>
+      <div id="practice"></div>
+    </div>
+  </section>
+
+  <details class="card">
+    <summary>Backend settings</summary>
+
+    <label>
+      Backend URL
+      <input
+        id="backend"
+        value="http://127.0.0.1:8000"
+      >
+    </label>
+  </details>
+
+  <script src="compare.js"></script>
+  <script src="visualizer.js"></script>
+  <script src="solution_viz.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

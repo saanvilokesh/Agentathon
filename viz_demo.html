@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cognitive Fingerprint - Visualizer demo</title>
+  <link rel="stylesheet" href="solution_viz.css">
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; padding: 14px; max-width: 440px; background: #0b1020; color: #e8ecf8; font: 13px/1.5 system-ui, sans-serif; }
+    h1 { font-size: 17px; margin: 0 0 4px; }
+    p.muted { color: #a8b3ce; margin: 0 0 10px; font-size: 12px; }
+    select { width: 100%; padding: 9px; border-radius: 7px; border: 1px solid #34405d; background: #0d1427; color: #fff; margin-bottom: 8px; }
+    button { padding: 8px; border: 0; border-radius: 8px; cursor: pointer; color: #fff; background: #33405d; }
+  </style>
+</head>
+<body>
+  <h1>🧠 Visualizer demo</h1>
+  <p class="muted">Offline preview with built-in sample scripts. In the extension, the same renderer draws a script generated for the problem you are viewing.</p>
+  <select id="sample" aria-label="Sample problem"></select>
+  <div id="mount"></div>
+  <script src="viz_samples.js"></script>
+  <script src="solution_viz.js"></script>
+  <script src="viz_demo.js"></script>
+</body>
+</html>
